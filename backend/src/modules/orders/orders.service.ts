@@ -91,6 +91,20 @@ export const ordersService = {
     });
   },
 
+  async deleteOrder(orderId: string) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
+
+    if (!order) {
+      throw new OrdersError("Order not found", 404);
+    }
+
+    await prisma.order.delete({
+      where: { id: orderId }
+    });
+  },
+
   async getOrderLogs(type?: "fnb" | "session") {
     return prisma.order.findMany({
       where:

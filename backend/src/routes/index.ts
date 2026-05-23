@@ -26,6 +26,7 @@ billingRouter.post("/stop/:sessionId", billingController.stopSession);
 billingRouter.post("/extend/:sessionId", billingController.extendSession);
 billingRouter.get("/active", billingController.getActiveSessions);
 billingRouter.get("/logs", requireOwner, billingController.getSessionLogs);
+billingRouter.delete("/logs/:sessionId", requireOwner, billingController.deleteSession);
 
 packagesRouter.use(authenticateToken);
 packagesRouter.get("/", packagesController.listPackages);
@@ -52,6 +53,7 @@ ordersRouter.use(authenticateToken);
 ordersRouter.post("/", ordersController.createOrder);
 ordersRouter.put("/:id/status", ordersController.updateOrderStatus);
 ordersRouter.get("/logs", requireOwner, ordersController.getOrderLogs);
+ordersRouter.delete("/logs/:orderId", requireOwner, ordersController.deleteOrder);
 
 smartPlugRouter.get("/", (_req: Request, res: Response) => {
   res.json({ module: "smart-plug", status: "ready" });

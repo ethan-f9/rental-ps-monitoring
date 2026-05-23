@@ -61,6 +61,21 @@ export const ordersController = {
     }
   },
 
+  async deleteOrder(req: Request, res: Response) {
+    const { orderId } = req.params;
+
+    if (!isNonEmptyString(orderId)) {
+      return res.status(400).json({ message: "orderId is required" });
+    }
+
+    try {
+      await ordersService.deleteOrder(orderId.trim());
+      return res.status(204).send();
+    } catch (error) {
+      return handleError(error, res);
+    }
+  },
+
   async getOrderLogs(req: Request, res: Response) {
     const { type } = req.query as {
       type?: unknown;

@@ -230,6 +230,33 @@ export const billingService = {
     return completedSession;
   },
 
+  async deleteSession(sessionId: string) {
+    const session = await prisma.rentalSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        orders: true
+      }
+    });
+
+    if (!session) {
+      throw new BillingError("Rental session not found", 404);
+    }
+
+    if (session.status !== RentalStatus.COMPLETED) {
+      throw new BillingError("Only completed sessions can be deleted", 400);
+    }
+
+    if (session.orders.length > 0) {
+      await prisma.order.deleteMany({
+        where: { rentalSessionId: sessionId }
+      });
+    }
+
+    await prisma.rentalSession.delete({
+      where: { id: sessionId }
+    });
+  },
+
   async extendSession(sessionId: string, extraMinutes: number) {
     const session = await prisma.rentalSession.findUnique({
       where: { id: sessionId },

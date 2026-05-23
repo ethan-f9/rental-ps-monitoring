@@ -43,6 +43,33 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
     void load();
   }, []);
 
+  const handleDeleteBillingLog = async (sessionId: string) => {
+    if (!confirm("Hapus log sesi ini?")) {
+      return;
+    }
+
+    try {
+      await api.deleteBillingLog(sessionId);
+      await load();
+    } catch (error) {
+      setError(error instanceof ApiError ? error.message : "Tidak dapat menghapus log sesi");
+    }
+  };
+
+  const handleDeleteOrderLog = async (orderId: string) => {
+    if (!confirm("Hapus log pesanan ini?")) {
+      return;
+    }
+
+    try {
+      await api.deleteOrderLog(orderId);
+      await load();
+    } catch (error) {
+      setError(error instanceof ApiError ? error.message : "Tidak dapat menghapus log pesanan");
+    }
+  };
+
+
   const todaySummary = useMemo(() => {
     const now = new Date();
     const isToday = (value: string | null | undefined) => {
@@ -117,7 +144,7 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
           {loading ? (
             <p className="text-sm text-zinc-400">Memuat log billing...</p>
           ) : (
-            <DataTable columns={["Unit", "Paket", "Mulai", "Selesai", "Total", "Status"]}>
+            <DataTable columns={["Unit", "Paket", "Mulai", "Selesai", "Total", "Status", "Aksi"]}>
               {billingLogs.map((item) => (
                 <tr key={item.id}>
                   <td className="px-4 py-3">{item.playStation.name}</td>
@@ -127,6 +154,15 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
                   <td className="px-4 py-3">{formatCurrency(item.totalAmount)}</td>
                   <td className="px-4 py-3">
                     <StatusDot tone={item.status === "COMPLETED" ? "idle" : "active"} label={item.status} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteBillingLog(item.id)}
+                      className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20"
+                    >
+                      Hapus
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -162,7 +198,7 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
             {loading ? (
               <p className="text-sm text-zinc-400">Memuat pesanan F&B...</p>
             ) : (
-              <DataTable columns={["Tipe", "Unit / Sesi", "Item", "Qty", "Total", "Dibuat", "Status"]}>
+              <DataTable columns={["Tipe", "Unit / Sesi", "Item", "Qty", "Total", "Dibuat", "Status", "Aksi"]}>
                 {orderLogs.map((item) => (
                   <tr key={item.id}>
                     <td className="px-4 py-3">
@@ -177,6 +213,15 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
                     <td className="px-4 py-3 text-zinc-400">{formatDateTime(item.createdAt)}</td>
                     <td className="px-4 py-3">
                       <StatusDot tone={item.status === "CANCELLED" ? "danger" : item.status === "SERVED" ? "idle" : "warning"} label={item.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteOrderLog(item.id)}
+                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20"
+                      >
+                        Hapus
+                      </button>
                     </td>
                   </tr>
                 ))}

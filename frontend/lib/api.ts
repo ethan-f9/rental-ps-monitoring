@@ -84,6 +84,10 @@ export const api = {
       body: JSON.stringify({ extraMinutes })
     }),
   getBillingLogs: () => request<BillingSession[]>("/billing/logs"),
+  deleteBillingLog: (id: string) =>
+    request<void>(`/billing/logs/${id}`, {
+      method: "DELETE"
+    }),
   createOrder: (sessionId: string | null | undefined, menuItemId: string, quantity: number) =>
     request<OrderLog>("/orders", {
       method: "POST",
@@ -96,6 +100,10 @@ export const api = {
     }),
   getOrderLogs: (type?: "fnb" | "session") =>
     request<OrderLog[]>(type ? `/orders/logs?type=${type}` : "/orders/logs"),
+  deleteOrderLog: (id: string) =>
+    request<void>(`/orders/logs/${id}`, {
+      method: "DELETE"
+    }),
   getPackages: () => request<PackageItem[]>("/packages"),
   createPackage: (payload: {
     name: string;
