@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  OPERATOR
+}
+
+enum UnitStatus {
+  IDLE
+}
+
+enum RentalStatus {
+  IDLE
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  SERVED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlayStationUnit {
+  id              String          @id @default(cuid())
+  name            String          @unique
+  status          UnitStatus      @default(IDLE)
+  pricePerHour    Decimal
+  smartPlugDevice SmartPlugDevice?
+  packages        Package[]
+  rentalSessions  RentalSession[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model RentalSession {
+  id              String          @id @default(cuid())
+  playStationId   String
+  packageId       String?
+  status          RentalStatus    @default(IDLE)
+  startTime       DateTime?
+  endTime         DateTime?
+  duration        Int?
+  expectedEndTime DateTime?
+  extendedMinutes Int             @default(0)
+  totalAmount     Decimal         @default(0)
+  playStation     PlayStationUnit @relation(fields: [playStationId], references: [id])
+  package         Package?        @relation(fields: [packageId], references: [id])
+  orders          Order[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Package {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  flatPrice       Decimal
+  unitId          String
+  durationMinute  Int
+  unit            PlayStationUnit  @relation(fields: [unitId], references: [id])
+  packageFnbItems PackageFnbItem[]
+  rentalSessions  RentalSession[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model PackageFnbItem {
+  id        String   @id @default(cuid())
+  packageId String
+  menuItemId String
+  quantity  Int
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@unique([packageId, menuItemId])
+}
+
+model MenuItem {
+  id              String           @id @default(cuid())
+  name            String
+  price           Decimal
+  category        String
+  isActive        Boolean          @default(true)
+  orders          Order[]
+  packageFnbItems PackageFnbItem[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  rentalSessionId String?
+  menuItemId      String
+  quantity        Int           @default(1)
+  totalPrice      Decimal
+  status          OrderStatus   @default(PENDING)
+  rentalSession   RentalSession? @relation(fields: [rentalSessionId], references: [id])
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model SmartPlugDevice {
+  id            String          @id @default(cuid())
+  deviceId      String          @unique
+  clientId      String
+  clientSecret  String
+  isActive      Boolean         @default(true)
+  playStationId String          @unique
+  playStation   PlayStationUnit @relation(fields: [playStationId], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}

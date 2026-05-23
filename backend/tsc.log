@@ -1,0 +1,2 @@
+src/modules/orders/orders.service.ts(32,43): error TS2345: Argument of type 'RentalStatus' is not assignable to parameter of type '"RUNNING" | "PAUSED"'.
+  Type '"IDLE"' is not assignable to type '"RUNNING" | "PAUSED"'.
