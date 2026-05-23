@@ -38,7 +38,7 @@ export const billingController = {
     try {
       const session = hasPackageMode
         ? await billingService.startSession({ packageId: packageId.trim() })
-        : await billingService.startSession({ unitId: unitId.trim(), durationMinute: durationMinute as number });
+        : await billingService.startSession({ unitId: (unitId as string).trim(), durationMinute: durationMinute as number });
       return res.status(201).json(session);
     } catch (error) {
       return handleBillingError(error, res);
@@ -55,6 +55,21 @@ export const billingController = {
     try {
       const session = await billingService.stopSession(sessionId.trim());
       return res.status(200).json(session);
+    } catch (error) {
+      return handleBillingError(error, res);
+    }
+  },
+
+  async deleteSession(req: Request, res: Response) {
+    const { sessionId } = req.params;
+
+    if (!isNonEmptyString(sessionId)) {
+      return res.status(400).json({ message: "sessionId is required" });
+    }
+
+    try {
+      await billingService.deleteSession(sessionId.trim());
+      return res.status(204).send();
     } catch (error) {
       return handleBillingError(error, res);
     }
