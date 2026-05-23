@@ -15,7 +15,7 @@ import type { PlayStationUnit, SmartPlugDevice } from "@/types/api";
 export default function UnitsPage() {
   return (
     <ProtectedPage requiredRole="OWNER">
-      {(session) => <UnitsContent user={session.user} />}
+      {(session) => <UnitsContent user={session.user as any} />}
     </ProtectedPage>
   );
 }

@@ -18,7 +18,7 @@ type FnbDraft = {
 export default function PackagesPage() {
   return (
     <ProtectedPage requiredRole="OWNER">
-      {(session) => <PackagesContent user={session.user} />}
+      {(session) => <PackagesContent user={session.user as any} />}
     </ProtectedPage>
   );
 }

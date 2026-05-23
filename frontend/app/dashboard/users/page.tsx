@@ -13,7 +13,7 @@ import type { AuthUser } from "@/types/api";
 export default function UsersPage() {
   return (
     <ProtectedPage requiredRole="OWNER">
-      {(session) => <UsersContent user={session.user} />}
+      {(session) => <UsersContent user={session.user as any} />}
     </ProtectedPage>
   );
 }

@@ -14,7 +14,7 @@ import type { MenuItem } from "@/types/api";
 export default function MenuPage() {
   return (
     <ProtectedPage requiredRole="OWNER">
-      {(session) => <MenuContent user={session.user} />}
+      {(session) => <MenuContent user={session.user as any} />}
     </ProtectedPage>
   );
 }
