@@ -13,7 +13,7 @@ export class BillingError extends Error {
   }
 }
 
-const ACTIVE_SESSION_STATUSES = [RentalStatus.RUNNING, RentalStatus.PAUSED] as RentalStatus[];
+const ACTIVE_SESSION_STATUSES: RentalStatus[] = [RentalStatus.RUNNING, RentalStatus.PAUSED];
 
 const includeOptions = {
   playStation: {
