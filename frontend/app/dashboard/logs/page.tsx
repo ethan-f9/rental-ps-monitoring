@@ -14,7 +14,7 @@ import type { BillingSession, OrderLog } from "@/types/api";
 export default function LogsPage() {
   return (
     <ProtectedPage requiredRole="OWNER">
-      {(session) => <LogsContent user={session.user} />}
+      {(session) => <LogsContent user={session.user as any} />}
     </ProtectedPage>
   );
 }
