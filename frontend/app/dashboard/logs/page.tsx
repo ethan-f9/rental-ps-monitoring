@@ -9,7 +9,7 @@ import { ProtectedPage } from "@/components/ProtectedPage";
 import { StatusDot } from "@/components/StatusDot";
 import { api, ApiError } from "@/lib/api";
 import { formatCurrency, formatDateTime } from "@/lib/time";
-import type { BillingSession, OrderLog } from "@/types/api";
+import type { AuthUser, BillingSession, OrderLog } from "@/types/api";
 
 export default function LogsPage() {
   return (
@@ -19,7 +19,7 @@ export default function LogsPage() {
   );
 }
 
-function LogsContent({ user }: { user: { id: string; name: string; email: string; role: "OWNER" } }) {
+function LogsContent({ user }: { user: AuthUser }) {
   const [billingLogs, setBillingLogs] = useState<BillingSession[]>([]);
   const [orderLogs, setOrderLogs] = useState<OrderLog[]>([]);
   const [activeTab, setActiveTab] = useState<"sessions" | "fnb">("sessions");
