@@ -38,7 +38,7 @@ export const billingController = {
     try {
       const session = hasPackageMode
         ? await billingService.startSession({ packageId: packageId.trim() })
-        : await billingService.startSession({ unitId: unitId.trim(), durationMinute });
+        : await billingService.startSession({ unitId: unitId.trim(), durationMinute: durationMinute as number });
       return res.status(201).json(session);
     } catch (error) {
       return handleBillingError(error, res);

@@ -13,7 +13,7 @@ export class BillingError extends Error {
   }
 }
 
-const ACTIVE_SESSION_STATUSES = [RentalStatus.RUNNING, RentalStatus.PAUSED];
+const ACTIVE_SESSION_STATUSES = [RentalStatus.RUNNING, RentalStatus.PAUSED] as const satisfies readonly RentalStatus[];
 
 const includeOptions = {
   playStation: {
@@ -242,7 +242,7 @@ export const billingService = {
       throw new BillingError("Rental session not found", 404);
     }
 
-    if (!ACTIVE_SESSION_STATUSES.includes(session.status)) {
+    if (!ACTIVE_SESSION_STATUSES.includes(session.status as (typeof ACTIVE_SESSION_STATUSES)[number])) {
       throw new BillingError("Only active sessions can be extended", 400);
     }
 
