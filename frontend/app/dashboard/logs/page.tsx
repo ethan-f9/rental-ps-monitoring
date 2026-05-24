@@ -26,6 +26,11 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // New UI states
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [fadingIds, setFadingIds] = useState<string[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   const load = async () => {
     try {
       const [sessions, orders] = await Promise.all([api.getBillingLogs(), api.getOrderLogs()]);
@@ -43,32 +48,61 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
     void load();
   }, []);
 
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 2000);
+  };
+
   const handleDeleteBillingLog = async (sessionId: string) => {
+    setDeletingId(sessionId);
+
     if (!confirm("Hapus log sesi ini?")) {
+      setDeletingId(null);
       return;
     }
 
     try {
       await api.deleteBillingLog(sessionId);
-      await load();
+
+      // trigger fade-out then remove from list
+      setFadingIds((s) => [...s, sessionId]);
+      setTimeout(() => {
+        setBillingLogs((prev) => prev.filter((i) => i.id !== sessionId));
+      }, 300);
+
+      showToast("Log berhasil dihapus");
+      setError(null);
     } catch (error) {
       setError(error instanceof ApiError ? error.message : "Tidak dapat menghapus log sesi");
+    } finally {
+      setDeletingId((cur) => (cur === sessionId ? null : cur));
     }
   };
 
   const handleDeleteOrderLog = async (orderId: string) => {
+    setDeletingId(orderId);
+
     if (!confirm("Hapus log pesanan ini?")) {
+      setDeletingId(null);
       return;
     }
 
     try {
       await api.deleteOrderLog(orderId);
-      await load();
+
+      setFadingIds((s) => [...s, orderId]);
+      setTimeout(() => {
+        setOrderLogs((prev) => prev.filter((i) => i.id !== orderId));
+      }, 300);
+
+      showToast("Log berhasil dihapus");
+      setError(null);
     } catch (error) {
       setError(error instanceof ApiError ? error.message : "Tidak dapat menghapus log pesanan");
+    } finally {
+      setDeletingId((cur) => (cur === orderId ? null : cur));
     }
   };
-
 
   const todaySummary = useMemo(() => {
     const now = new Date();
@@ -115,6 +149,13 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
     <Layout user={user} title="Log" subtitle="Tinjau sesi PlayStation, pesanan F&B, dan ringkasan performa hari ini.">
       {error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div> : null}
 
+      {/* Toast */}
+      {toastMessage ? (
+        <div className="pointer-events-none fixed right-6 top-6 z-50">
+          <div className="pointer-events-auto rounded-md bg-emerald-600/95 px-4 py-2 text-sm font-medium text-white shadow-lg">{toastMessage}</div>
+        </div>
+      ) : null}
+
       <div className="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="Pendapatan Sesi Hari Ini" value={formatCurrency(todaySummary.revenue)} />
         <SummaryCard label="Pendapatan F&B Hari Ini" value={formatCurrency(todaySummary.fnbRevenue)} />
@@ -145,27 +186,33 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
             <p className="text-sm text-zinc-400">Memuat log billing...</p>
           ) : (
             <DataTable columns={["Unit", "Paket", "Mulai", "Selesai", "Total", "Status", "Aksi"]}>
-              {billingLogs.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-3">{item.playStation.name}</td>
-                  <td className="px-4 py-3">{item.package?.name ?? "Langsung"}</td>
-                  <td className="px-4 py-3 text-zinc-400">{formatDateTime(item.startTime)}</td>
-                  <td className="px-4 py-3 text-zinc-400">{formatDateTime(item.endTime)}</td>
-                  <td className="px-4 py-3">{formatCurrency(item.totalAmount)}</td>
-                  <td className="px-4 py-3">
-                    <StatusDot tone={item.status === "COMPLETED" ? "idle" : "active"} label={item.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => void handleDeleteBillingLog(item.id)}
-                      className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20"
-                    >
-                      Hapus
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {billingLogs.map((item) => {
+                const isFading = fadingIds.includes(item.id);
+                const isDeleting = deletingId === item.id;
+
+                return (
+                  <tr key={item.id} className={`transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
+                    <td className="px-4 py-3">{item.playStation.name}</td>
+                    <td className="px-4 py-3">{item.package?.name ?? "Langsung"}</td>
+                    <td className="px-4 py-3 text-zinc-400">{formatDateTime(item.startTime)}</td>
+                    <td className="px-4 py-3 text-zinc-400">{formatDateTime(item.endTime)}</td>
+                    <td className="px-4 py-3">{formatCurrency(item.totalAmount)}</td>
+                    <td className="px-4 py-3">
+                      <StatusDot tone={item.status === "COMPLETED" ? "idle" : "active"} label={item.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteBillingLog(item.id)}
+                        disabled={isDeleting}
+                        className={`rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20 ${isDeleting ? "opacity-60 cursor-not-allowed" : ""}`}
+                      >
+                        {isDeleting ? "Menghapus..." : "Hapus"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </DataTable>
           )}
         </Panel>
@@ -199,32 +246,38 @@ function LogsContent({ user }: { user: { id: string; name: string; email: string
               <p className="text-sm text-zinc-400">Memuat pesanan F&B...</p>
             ) : (
               <DataTable columns={["Tipe", "Unit / Sesi", "Item", "Qty", "Total", "Dibuat", "Status", "Aksi"]}>
-                {orderLogs.map((item) => (
-                  <tr key={item.id}>
-                    <td className="px-4 py-3">
-                      {item.rentalSession ? <StatusDot tone="active" label="SESSION" /> : <StatusDot tone="warning" label="WALK-IN" />}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-300">
-                      {item.rentalSession ? `${item.rentalSession.playStation.name} / ${item.rentalSession.package?.name ?? "Langsung"}` : "Walk-in"}
-                    </td>
-                    <td className="px-4 py-3">{item.menuItem.name}</td>
-                    <td className="px-4 py-3">{item.quantity}</td>
-                    <td className="px-4 py-3">{formatCurrency(item.totalPrice)}</td>
-                    <td className="px-4 py-3 text-zinc-400">{formatDateTime(item.createdAt)}</td>
-                    <td className="px-4 py-3">
-                      <StatusDot tone={item.status === "CANCELLED" ? "danger" : item.status === "SERVED" ? "idle" : "warning"} label={item.status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => void handleDeleteOrderLog(item.id)}
-                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20"
-                      >
-                        Hapus
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {orderLogs.map((item) => {
+                  const isFading = fadingIds.includes(item.id);
+                  const isDeleting = deletingId === item.id;
+
+                  return (
+                    <tr key={item.id} className={`transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
+                      <td className="px-4 py-3">
+                        {item.rentalSession ? <StatusDot tone="active" label="SESSION" /> : <StatusDot tone="warning" label="WALK-IN" />}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-300">
+                        {item.rentalSession ? `${item.rentalSession.playStation.name} / ${item.rentalSession.package?.name ?? "Langsung"}` : "Walk-in"}
+                      </td>
+                      <td className="px-4 py-3">{item.menuItem.name}</td>
+                      <td className="px-4 py-3">{item.quantity}</td>
+                      <td className="px-4 py-3">{formatCurrency(item.totalPrice)}</td>
+                      <td className="px-4 py-3 text-zinc-400">{formatDateTime(item.createdAt)}</td>
+                      <td className="px-4 py-3">
+                        <StatusDot tone={item.status === "CANCELLED" ? "danger" : item.status === "SERVED" ? "idle" : "warning"} label={item.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteOrderLog(item.id)}
+                          disabled={isDeleting}
+                          className={`rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20 ${isDeleting ? "opacity-60 cursor-not-allowed" : ""}`}
+                        >
+                          {isDeleting ? "Menghapus..." : "Hapus"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </DataTable>
             )}
           </Panel>
